@@ -1,3 +1,5 @@
+import 'package:chat_app/helpers/show_alert.dart';
+import 'package:chat_app/services/auth_service.dart';
 import 'package:chat_app/widgets/login_button.dart';
 import 'package:flutter/material.dart';
 
@@ -5,6 +7,7 @@ import 'package:chat_app/themes/app_theme.dart';
 import 'package:chat_app/widgets/custom_text_input.dart';
 import 'package:chat_app/widgets/login_labels.dart';
 import 'package:chat_app/widgets/login_logo.dart';
+import 'package:provider/provider.dart';
 
 class LoginPage extends StatelessWidget {
   @override
@@ -46,6 +49,7 @@ class __LoginFormState extends State<_LoginForm> {
   final passwordController = TextEditingController();
   @override
   Widget build(BuildContext context) {
+    final authService = Provider.of<AuthService>(context);
     return Container(
       child: Column(
         children: [
@@ -63,11 +67,22 @@ class __LoginFormState extends State<_LoginForm> {
             isPassword: true,
           ),
           LoginButton(
-              text: 'Ingresar',
-              onPressed: () {
-                print(emailController.text);
-                print(passwordController.text);
-              }),
+            text: 'Ingresar',
+            onPressed: authService.isLoggingIn
+                ? null
+                : () async {
+                    FocusScope.of(context).unfocus();
+                    final loginOk = await authService.login(
+                      emailController.text.trim(),
+                      passwordController.text.trim(),
+                    );
+                    if (loginOk)
+                      Navigator.pushReplacementNamed(context, 'usuarios');
+                    else
+                      showAlert(context, 'Login incorrecto',
+                          'Favor revise sus credenciales');
+                  },
+          ),
         ],
       ),
       margin: EdgeInsets.only(top: 40),

@@ -1,32 +1,35 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import 'package:pull_to_refresh/pull_to_refresh.dart';
 
-import 'package:chat_app/models/usuario.dart';
+import 'package:chat_app/services/auth_service.dart';
+import 'package:chat_app/models/user.dart';
 
 class UsuariosPage extends StatelessWidget {
   final _refreshController = RefreshController(initialRefresh: false);
 
   @override
   Widget build(BuildContext context) {
-    final usuarios = <Usuario>[
-      Usuario(
+    final authService = Provider.of<AuthService>(context);
+    final usuarios = <User>[
+      User(
           id: 'c43c7640-8ccb-41e5-8f2a-ca82e5a407aa',
-          nombre: 'Cristóbal Mardones Bucarey',
+          name: 'Cristóbal Mardones Bucarey',
           email: 'cmardone@gmail.com',
           online: true),
-      Usuario(
+      User(
           id: '3a0e3bab-4f2b-4870-82ad-b44144a1547a',
-          nombre: 'Emilia Mardones Jiménez',
+          name: 'Emilia Mardones Jiménez',
           email: 'emiliamardonej@gmail.com',
           online: false),
-      Usuario(
+      User(
           id: 'b27dd7a9-5fce-41df-83d3-b7f35e2783a6',
-          nombre: 'Domingo Mardones Jiménez',
+          name: 'Domingo Mardones Jiménez',
           email: 'domingomardonesj@gmail.com',
           online: true),
-      Usuario(
+      User(
           id: 'e91c4c2e-7e4f-40b1-b3db-b5899433d3d4',
-          nombre: 'Daniela Jiménez Castro',
+          name: 'Daniela Jiménez Castro',
           email: 'daanjica27@gmail.com',
           online: false),
     ];
@@ -43,10 +46,13 @@ class UsuariosPage extends StatelessWidget {
         elevation: 1,
         leading: IconButton(
           icon: Icon(Icons.exit_to_app, color: Colors.black54),
-          onPressed: () {},
+          onPressed: () {
+            authService.logout();
+            Navigator.pushReplacementNamed(context, 'login');
+          },
         ),
-        title:
-            Text('Cristóbal Mardones', style: TextStyle(color: Colors.black54)),
+        title: Text(authService.user?.name ?? '',
+            style: TextStyle(color: Colors.black54)),
       ),
       body: SmartRefresher(
         child: usuariosListView(usuarios),
@@ -71,7 +77,7 @@ class UsuariosPage extends StatelessWidget {
     _refreshController.refreshCompleted();
   }
 
-  ListView usuariosListView(List<Usuario> usuarios) {
+  ListView usuariosListView(List<User> usuarios) {
     return ListView.separated(
       itemBuilder: (context, index) => _usuarioListTile(usuarios[index]),
       itemCount: usuarios.length,
@@ -80,14 +86,14 @@ class UsuariosPage extends StatelessWidget {
     );
   }
 
-  ListTile _usuarioListTile(Usuario usuario) {
+  ListTile _usuarioListTile(User usuario) {
     return ListTile(
       leading: CircleAvatar(
-        child: Text(usuario.nombre.substring(0, 1)),
+        child: Text(usuario.name.substring(0, 1)),
         backgroundColor: Colors.blue[100],
       ),
       subtitle: Text(usuario.email),
-      title: Text(usuario.nombre),
+      title: Text(usuario.name),
       trailing: Container(
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(100),
