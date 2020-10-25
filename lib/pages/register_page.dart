@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import 'package:chat_app/helpers/show_alert.dart';
-import 'package:chat_app/services/auth_service.dart';
+import 'package:chat_app/services/services.dart';
 import 'package:chat_app/themes/app_theme.dart';
 import 'package:chat_app/widgets/custom_text_input.dart';
 import 'package:chat_app/widgets/login_button.dart';
@@ -55,6 +55,7 @@ class __LoginFormState extends State<_LoginForm> {
   @override
   Widget build(BuildContext context) {
     final authService = Provider.of<AuthService>(context);
+    final socketService = Provider.of<SocketService>(context);
     return Container(
       child: Column(
         children: [
@@ -87,9 +88,10 @@ class __LoginFormState extends State<_LoginForm> {
                       emailController.text.trim(),
                       passwordController.text.trim(),
                     );
-                    if (registerOk == true)
+                    if (registerOk == true) {
+                      await socketService.connect();
                       Navigator.pushReplacementNamed(context, 'usuarios');
-                    else
+                    } else
                       showAlert(context, 'Registro incorrecto', registerOk);
                   },
           ),

@@ -1,9 +1,11 @@
 import 'dart:io';
-import 'dart:math';
 
-import 'package:chat_app/widgets/chat_message.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+
+import 'package:chat_app/services/services.dart';
+import 'package:chat_app/widgets/chat_message.dart';
 
 class ChatPage extends StatefulWidget {
   @override
@@ -14,12 +16,45 @@ class _ChatPageState extends State<ChatPage> with TickerProviderStateMixin {
   final _textController = TextEditingController();
   final _focusNode = FocusNode();
   bool _isWriting = false;
-  final _messages = <ChatMessage>[];
+  List<ChatMessage> _messages = <ChatMessage>[];
+  AuthService authService;
+  ChatService chatService;
+  SocketService socketService;
+
+  @override
+  void initState() {
+    authService = Provider.of<AuthService>(context, listen: false);
+    chatService = Provider.of<ChatService>(context, listen: false);
+    socketService = Provider.of<SocketService>(context, listen: false);
+    socketService.newMessage = (Map<String, dynamic> payload) =>
+        _addMessage(payload['from'], payload['message']);
+    _messages = chatService.messages
+        .map(
+          (item) => ChatMessage(
+            text: item.message,
+            userId: item.from,
+            controller: AnimationController(
+              vsync: this,
+              duration: Duration(milliseconds: 0),
+            )..forward(),
+          ),
+        )
+        .toList();
+    super.initState();
+  }
+
+  @override
+  void dispose() {
+    socketService.newMessage = null;
+    _messages.forEach((element) => element.controller.dispose());
+    _textController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: _chatAppBar(),
+      appBar: _chatAppBar(chatService.toUser.name),
       body: Container(
         child: Column(
           children: [
@@ -91,7 +126,7 @@ class _ChatPageState extends State<ChatPage> with TickerProviderStateMixin {
     );
   }
 
-  AppBar _chatAppBar() {
+  AppBar _chatAppBar(String name) {
     return AppBar(
       backgroundColor: Colors.white,
       centerTitle: true,
@@ -100,12 +135,12 @@ class _ChatPageState extends State<ChatPage> with TickerProviderStateMixin {
         children: [
           CircleAvatar(
             backgroundColor: Colors.blue[100],
-            child: Text('C', style: TextStyle(fontSize: 12)),
+            child: Text(name.toUpperCase().substring(0, 1),
+                style: TextStyle(fontSize: 12)),
             maxRadius: 15,
           ),
           SizedBox(height: 3),
-          Text('Cristóbal Mardones Bucarey',
-              style: TextStyle(color: Colors.black87, fontSize: 12))
+          Text(name, style: TextStyle(color: Colors.black87, fontSize: 12))
         ],
       ),
     );
@@ -115,9 +150,18 @@ class _ChatPageState extends State<ChatPage> with TickerProviderStateMixin {
     if (text.isEmpty) return;
     _textController.clear();
     _focusNode.requestFocus();
-    final rnd = Random();
+    _addMessage(authService.user.id, text);
+    setState(() => _isWriting = false);
+    socketService.sendMessage({
+      'to': chatService.toUser.id,
+      'from': authService.user.id,
+      'message': text
+    });
+  }
+
+  _addMessage(String uid, String text) {
     final message = ChatMessage(
-      userId: rnd.nextBool() ? '123' : '321',
+      userId: uid,
       text: text,
       controller: AnimationController(
         vsync: this,
@@ -126,14 +170,5 @@ class _ChatPageState extends State<ChatPage> with TickerProviderStateMixin {
     );
     _messages.insert(0, message);
     message.controller.forward();
-    setState(() => _isWriting = false);
-  }
-
-  @override
-  void dispose() {
-    // TODO: Socket disconnect
-    _messages.forEach((element) => element.controller.dispose());
-    _textController.dispose();
-    super.dispose();
   }
 }

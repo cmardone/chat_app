@@ -1,6 +1,9 @@
-import 'package:chat_app/services/auth_service.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+
+import 'package:chat_app/pages/login_page.dart';
+import 'package:chat_app/pages/usuarios_page.dart';
+import 'package:chat_app/services/services.dart';
 
 class LoadingPage extends StatelessWidget {
   @override
@@ -19,7 +22,23 @@ class LoadingPage extends StatelessWidget {
 
   Future checkSessionState(BuildContext context) async {
     final authService = Provider.of<AuthService>(context, listen: false);
+    final socketService = Provider.of<SocketService>(context, listen: false);
     final isLoggedIn = await authService.isLoggedIn();
-    Navigator.pushReplacementNamed(context, isLoggedIn ? 'usuarios' : 'login');
+    if (isLoggedIn) {
+      await socketService.connect();
+      Navigator.pushReplacement(
+          context,
+          PageRouteBuilder(
+            pageBuilder: (a, b, c) => UsuariosPage(),
+            transitionDuration: Duration(milliseconds: 0),
+          ));
+    } else {
+      Navigator.pushReplacement(
+          context,
+          PageRouteBuilder(
+            pageBuilder: (a, b, c) => LoginPage(),
+            transitionDuration: Duration(milliseconds: 0),
+          ));
+    }
   }
 }
